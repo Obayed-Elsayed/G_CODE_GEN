@@ -1,75 +1,146 @@
-# from tkinter import *
-# window = Tk()
-# window.geometry('960x540')
-# window.configure(bg = 'black')
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
 
-# def drag(event):
-#     # print(f'{event.y_root} {window.winfo_rootx()}')
-#     print(f'{event.x} {event.y}')
-#     updated_location = event.y - window.winfo_rooty()
-#     new_y = (updated_location//50)+40
-#     event.widget.place( y=new_y,anchor=CENTER)
+class SectionApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.geometry("960x540")
+        self.root.title("GCODE generator")
 
-# card = Canvas(window, width=500, height=40, bg='grey')
-# card.grid(row=2,column=0,sticky=W, pady=2)
-# # card.place(x=50, y=40,anchor=CENTER)
-# # card.bind("<B1-Motion>", drag)
+        # Dictionary to store sections by ID and a list to maintain visual order
+        self.entries = []
+        # not currently used
+        self.sections = {}
+        self.section_order = []
+        self.section_id_counter = 0  
 
-# another_card = Canvas(window, width=500, height=40, bg='grey')
-# another_card.grid(row=1,column=0,sticky=W, pady=2)
-# another_card.place(x=50, y=80,anchor=CENTER)
-# another_card.bind("<B1-Motion>", drag)
+        # Main Frame with scrollbar
+        self.main_frame = tk.Frame(root)
+        self.main_frame.pack(fill=tk.BOTH, expand=1)
+
+        self.canvas = tk.Canvas(self.main_frame)
+        self.scrollbar = ttk.Scrollbar(self.main_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = tk.Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.root.bind("<MouseWheel>", self.on_mouse_wheel)
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        # Button to add sections
+        self.add_button = tk.Button(root, text="Add Section", command=self.add_section)
+        self.add_button.pack(anchor="se", padx=10, pady=10)
+
+        # Button to add sections
+        self.add_button = tk.Button(root, text="Generate GCODE", command=self.generate_gcode, bg='darkred')
+        self.add_button.pack(side=tk.TOP,anchor="ne", padx=10, pady=10)
+
+        # Adding a template Section to copy from
+
+        template_frame = tk.Frame(self.scrollable_frame, borderwidth=1.5, relief="solid", padx=15, pady=15, bg="darkgrey")
+
+        label0 = tk.Label(template_frame, text="Template:")
+        label0.grid(row=0, column=0, padx=5, pady=5)
+        label1 = tk.Label(template_frame, text="Field 1:")
+        label1.grid(row=0, column=1, padx=5, pady=5)
+        self.entry1 = tk.Entry(template_frame)
+        self.entry1.grid(row=0, column=2, padx=5, pady=5)
+ 
+
+        label2 = tk.Label(template_frame, text="Field 2:")
+        label2.grid(row=0, column=3, padx=5, pady=5)
+        self.entry2 = tk.Entry(template_frame)
+        self.entry2.grid(row=0, column=4, padx=5, pady=5)
 
 
-# from tkinter import *
-# from functools import partial
+        template_frame.pack(fill="x", pady=5)
 
-# def changeOrder(widget1,widget2,initial):
-#     target=widget1.grid_info()
-#     widget1.grid(row=initial['row'],column=initial['column'])
-#     widget2.grid(row=target['row'],column=target['column'])
+    def on_mouse_wheel(self, event):
+        """Scroll the canvas with the mouse wheel."""
+        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    def add_section(self):
+        # Generate a unique ID for the new section
+        section_id = self.section_id_counter
+        self.section_id_counter += 1
 
-# def on_click(event):
-#     widget=event.widget
-#     print(widget) 
-#     if isinstance(widget,Label):
-#         start=(event.x,event.y)
-#         grid_info=widget.grid_info()
-#         widget.bind("<B1-Motion>",lambda event:drag_motion(event,widget,start))
-#         widget.bind("<ButtonRelease-1>",lambda event:drag_release(event,widget,grid_info))
-#     else:
-#         root.unbind("<ButtonRelease-1>")
+        # Create a new section frame
+        section_frame = tk.Frame(self.scrollable_frame, borderwidth=1, relief="solid", padx=10, pady=5)
+        
+        # Label and Entry fields for the section
+        label1 = tk.Label(section_frame, text="Position:")
+        label1.grid(row=0, column=0, padx=5, pady=5)
+        entry1 = tk.Entry(section_frame)
+        entry1.grid(row=0, column=1, padx=5, pady=5)
+        if(self.entry1.get()):
+            entry1.insert(0,self.entry1.get())
 
-# def drag_motion(event,widget,start):
-#     x = widget.winfo_x()+event.x-start[0]
-#     y = widget.winfo_y()+event.y-start[1] 
-#     widget.lift()
-#     widget.place(x=x,y=y)
+        label2 = tk.Label(section_frame, text="Speed:")
+        label2.grid(row=0, column=2, padx=5, pady=5)
+        entry2 = tk.Entry(section_frame)
+        entry2.grid(row=0, column=3, padx=5, pady=5)
+        if(self.entry2.get()):
+            entry2.insert(0,self.entry2.get())
+        # remove this section button
+        remove_button = tk.Button(section_frame, text="Remove", command=lambda: self.remove_section(section_id))
+        remove_button.grid(row=0, column=4, padx=5, pady=5)
 
-# def drag_release(event,widget,grid_info):
-#     widget.lower()
-#     x,y=root.winfo_pointerxy()
-#     target_widget=root.winfo_containing(x,y)
-#     if isinstance(target_widget,Label):
-#         changeOrder(target_widget,widget,grid_info)
-#     else:
-#         widget.grid(row=grid_info['row'],column=grid_info['column'])
+        self.entries.append((entry1,entry2))
 
-# root = Tk()
+        section_frame.pack(fill="x", pady=5)
+        self.sections[section_id] = section_frame  
+        self.section_order.append(section_id)      
 
-# myTextLabel1 = Label(root,text="Label 1",bg='yellow')
-# myTextLabel1.grid(row=0,column=0,padx=5,pady=5,sticky=E+W+S+N)
+    def remove_section(self, section_id):
+        # Remove section by ID from dictionary and list, then destroy the frame
+        if section_id in self.sections:
+            self.sections[section_id].destroy()   
+            del self.sections[section_id]         
+            self.section_order.remove(section_id) 
 
-# myTextLabel2 = Label(root,text="Label 2",bg='lawngreen')
-# myTextLabel2.grid(row=1,column=0,padx=5,pady=5,sticky=E+W+S+N)
+    def generate_gcode(self):
+        START_GCODE = "N280 TRC_START(\"MCMAST_X_TEST\",\"M_FRICT_POS_SIDE_X\" << R198)\nG1 X-190 F=10000\n$AN_SLTRACE=1\n"
+        END_GCODE = "G90\nN680 STOPRE\nTRC_STOP(0)\nACC[X]=100\nG90\n$AN_SLTRACE=2\nRET"
+        mid_code = ""
+        for index,(pos,speed) in enumerate(self.entries):
+            # need checks to make sure they are numbers
+            pos_entry = pos.get().strip()  
+            speed_entry = speed.get().strip()  
 
-# myButton = Button(root,text="Change order",command=partial(changeOrder,myTextLabel1,myTextLabel2))
-# myButton.grid(row=3,column=0,padx=5,pady=5,sticky=E+W+S+N)
+            if not pos_entry or not speed_entry:  # Check if the input is empty
+                # Show a warning message
+                messagebox.showwarning(title= "Missing Input", message=f"You forgor at section number: {index} 💀")
+                return
+            try:
+                int(speed.get())
+            except:
+                messagebox.showwarning(title= "Invalid Input", message=f"Added an extra letter perhaps at: {index}")
+            #  add auto conversion on distance from -300 to 300
+            mid_code+= f"G1 X{clamp(int(pos.get()),-300,300)} F={speed.get()}\n"
+        # print(all_entries)
 
-# root.bind("<Button-1>",on_click)
+        finalized_code = START_GCODE + mid_code + END_GCODE
+        with open("output.txt", "w") as file:
+            file.write(finalized_code)
 
-# root.mainloop()
 
-# window.mainloop()
-# if __name__ == '__main__':
-    # main()
+def clamp(n, min, max): 
+    if n < min: 
+        return min
+    elif n > max: 
+        return max
+    else: 
+        return n 
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = SectionApp(root)
+    root.mainloop()
