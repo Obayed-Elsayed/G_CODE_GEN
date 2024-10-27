@@ -8,12 +8,11 @@ from tkinter import messagebox
 class SectionApp:
     def __init__(self, root):
         self.root = root
-        self.root.geometry("960x540")
+        self.root.geometry("1080x540")
         self.root.title("GCODE generator")
 
         # Dictionary to store sections by ID and a list to maintain visual order
-        self.entries = []
-        # not currently used
+        self.entries = {}
         self.sections = {}
         self.section_order = []
         self.section_id_counter = 0  
@@ -43,8 +42,12 @@ class SectionApp:
         self.add_button = tk.Button(root, text="Add Section", command=self.add_section)
         self.add_button.pack(anchor="se", padx=10, pady=10)
 
-        # Button to add sections
+        # Button to generate the gcode
         self.add_button = tk.Button(root, text="Generate GCODE", command=self.generate_gcode, bg='darkred')
+        self.add_button.pack(side=tk.TOP,anchor="ne", padx=10, pady=10)
+
+        # Button to generate the gcode
+        self.add_button = tk.Button(root, text="Add Range", command=lambda:print("Not currently working"), bg='lightgrey')
         self.add_button.pack(side=tk.TOP,anchor="ne", padx=10, pady=10)
 
         # Adding a template Section to copy from
@@ -53,19 +56,43 @@ class SectionApp:
 
         label0 = tk.Label(template_frame, text="Template:")
         label0.grid(row=0, column=0, padx=5, pady=5)
-        label1 = tk.Label(template_frame, text="Field 1:")
+        label1 = tk.Label(template_frame, text="Position:")
         label1.grid(row=0, column=1, padx=5, pady=5)
         self.entry1 = tk.Entry(template_frame)
         self.entry1.grid(row=0, column=2, padx=5, pady=5)
  
 
-        label2 = tk.Label(template_frame, text="Field 2:")
+        label2 = tk.Label(template_frame, text="Speed:")
         label2.grid(row=0, column=3, padx=5, pady=5)
         self.entry2 = tk.Entry(template_frame)
         self.entry2.grid(row=0, column=4, padx=5, pady=5)
 
+        # Range functionallity frame
+        range_frame = tk.Frame(self.scrollable_frame, borderwidth=1.5, relief="solid", padx=15, pady=15, bg="darkgrey")
+        label3 = tk.Label(range_frame, text="Pos range:")
+        label3.grid(row=0, column=5, padx=5, pady=5)
+        self.entry3 = tk.Entry(range_frame)
+        self.entry3.grid(row=0, column=6, padx=5, pady=5)
 
-        template_frame.pack(fill="x", pady=5)
+        self.entry4 = tk.Entry(range_frame)
+        self.entry4.grid(row=0, column=7, padx=5, pady=5)
+
+        label4 = tk.Label(range_frame, text="Speed range:")
+        label4.grid(row=0, column=8, padx=5, pady=5)
+        self.entry5 = tk.Entry(range_frame)
+        self.entry5.grid(row=0, column=9, padx=5, pady=5)
+
+        self.entry6 = tk.Entry(range_frame)
+        self.entry6.grid(row=0, column=10, padx=5, pady=5)
+
+        label5 = tk.Label(range_frame, text="Iterations:")
+        label5.grid(row=0, column=11, padx=5, pady=5)
+        self.entry7 = tk.Entry(range_frame)
+        self.entry7.grid(row=0, column=12, padx=5, pady=5)
+
+
+        range_frame.pack(fill="none", pady=5)
+        template_frame.pack(fill="none", pady=5)
 
     def on_mouse_wheel(self, event):
         """Scroll the canvas with the mouse wheel."""
@@ -92,11 +119,14 @@ class SectionApp:
         entry2.grid(row=0, column=3, padx=5, pady=5)
         if(self.entry2.get()):
             entry2.insert(0,self.entry2.get())
-        # remove this section button
-        remove_button = tk.Button(section_frame, text="Remove", command=lambda: self.remove_section(section_id))
-        remove_button.grid(row=0, column=4, padx=5, pady=5)
 
-        self.entries.append((entry1,entry2))
+        id_label = tk.Label(section_frame, text=f"id: {section_id}")
+        id_label.grid(row=0, column=4, padx=5, pady=5)
+        # Button to remove a section
+        remove_button = tk.Button(section_frame, text="Remove", command=lambda: self.remove_section(section_id))
+        remove_button.grid(row=0, column=5, padx=5, pady=5)
+
+        self.entries[section_id] = (entry1,entry2)
 
         section_frame.pack(fill="x", pady=5)
         self.sections[section_id] = section_frame  
@@ -107,27 +137,29 @@ class SectionApp:
         if section_id in self.sections:
             self.sections[section_id].destroy()   
             del self.sections[section_id]         
+            del self.entries[section_id]
             self.section_order.remove(section_id) 
 
     def generate_gcode(self):
         START_GCODE = "N280 TRC_START(\"MCMAST_X_TEST\",\"M_FRICT_POS_SIDE_X\" << R198)\nG1 X-190 F=10000\n$AN_SLTRACE=1\n"
         END_GCODE = "G90\nN680 STOPRE\nTRC_STOP(0)\nACC[X]=100\nG90\n$AN_SLTRACE=2\nRET"
         mid_code = ""
-        for index,(pos,speed) in enumerate(self.entries):
+        for id,values in self.entries.items():
             # need checks to make sure they are numbers
-            pos_entry = pos.get().strip()  
-            speed_entry = speed.get().strip()  
+            pos_entry = values[0].get().strip()  
+            speed_entry = values[1].get().strip()  
 
             if not pos_entry or not speed_entry:  # Check if the input is empty
                 # Show a warning message
-                messagebox.showwarning(title= "Missing Input", message=f"You forgor at section number: {index} 💀")
+                messagebox.showwarning(title= "Missing Input", message=f"You forgor at section number: {id} 💀")
                 return
             try:
-                int(speed.get())
+                int(values[0].get())
+                int(values[1].get())
             except:
-                messagebox.showwarning(title= "Invalid Input", message=f"Added an extra letter perhaps at: {index}")
+                messagebox.showwarning(title= "Invalid Input", message=f"Added an extra letter perhaps at: {id}")
             #  add auto conversion on distance from -300 to 300
-            mid_code+= f"G1 X{clamp(int(pos.get()),-300,300)} F={speed.get()}\n"
+            mid_code+= f"G1 X{clamp(int(values[0].get()),-300,300)} F={values[1].get()}\n"
         # print(all_entries)
 
         finalized_code = START_GCODE + mid_code + END_GCODE
