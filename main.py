@@ -1,7 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
-
+# TODO:
+# Add two buttons to change position of sections ▲▼
+# add a number indicating position of said section as a label
+# the padding is kinda bad tbh 
 class SectionApp:
     def __init__(self, root):
         self.root = root
