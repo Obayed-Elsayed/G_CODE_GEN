@@ -163,7 +163,7 @@ class SectionApp:
         # print(all_entries)
 
         finalized_code = START_GCODE + mid_code + END_GCODE
-        with open("output.txt", "w") as file:
+        with open("./output.txt", "w") as file:
             file.write(finalized_code)
 
 
