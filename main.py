@@ -141,8 +141,8 @@ class SectionApp:
             self.section_order.remove(section_id) 
 
     def generate_gcode(self):
-        START_GCODE = "N280 TRC_START(\"MCMAST_X_TEST\",\"M_FRICT_POS_SIDE_X\" << R198)\nG1 X-190 F=10000\n$AN_SLTRACE=1\n"
-        END_GCODE = "G90\nN680 STOPRE\nTRC_STOP(0)\nACC[X]=100\nG90\n$AN_SLTRACE=2\nRET"
+        START_GCODE = "G1 X-190 F=10000\n$AN_SLTRACE=1\n"
+        END_GCODE = "G90\nACC[X]=100\nG90\n$AN_SLTRACE=2\nRET"
         mid_code = ""
         for id,values in self.entries.items():
             # need checks to make sure they are numbers
